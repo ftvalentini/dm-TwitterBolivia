@@ -27,6 +27,22 @@ y = datf.clase
 
 #%% generacion de features de users
 # ACA GENERAR FEATURES DE USERS en X, GUARDAR NOMBRES EN UNA LISTA
+X['ln_user_followers'] = np.log(X['user_followers'] + 1)
+X['ln_user_friends'] = np.log(X['user_friends'] + 1)
+X['ln_user_listed'] = np.log(X['user_listed'] + 1)
+X['ln_user_statuses'] = np.log(X['user_statuses'] + 1)
+X['tiempo_user'] = X['created'] - X['user_created']
+X['tiempo_user'] = X['tiempo_user'].astype('timedelta64[D]')
+X['ln_tiempo_user'] = np.log(X['tiempo_user'] + 1)
+X['words_tweet'] = X['texto_limpio'].str.split().apply(len)
+
+user_features = ['ln_user_followers',
+                 'ln_user_friends',
+                 'ln_user_listed',
+                 'ln_user_statuses',
+                 'ln_tiempo_user',
+                 'user_verified',
+                 'words_tweet']
 
 #%% pasos de los modelos
 # extraccion de features
@@ -51,7 +67,7 @@ tfidf_features = Pipeline([('selector', FeatSelector(variables='texto'))
 pipe_b = Pipeline([
     ('features', FeatureUnion([
         ('tfidf', tfidf_features)
-        ,('others', FeatSelector(variables=['user_followers','user_friends'])) # aca va lista de user_features
+        ,('others', FeatSelector(variables= user_features)) # aca va lista de user_features
     ])),
     ('clf', clf)
 ])
