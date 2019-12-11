@@ -7,7 +7,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline, FeatureUnion
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_validate, StratifiedKFold
 
 from helpers import clean_text, tokenize, get_stopwords
 
@@ -22,22 +22,26 @@ sw = get_stopwords()
 #%% get textos y clase de tuits
 # delete textos duplicados
 datf = dat.drop_duplicates('texto', keep='first').reset_index(drop=True)
-X_texto = X.texto
+X_texto = datf.texto
 y = datf.clase
 
 #%% pasos de los modelos
+semilla = 1993
 # extraccion de features
 tfidf = TfidfVectorizer(preprocessor=clean_text, tokenizer=tokenize
                         , min_df=0.01, ngram_range=(1,4), stop_words=sw, binary=True)
 # clasificador logistico (ridge)
-clf = LogisticRegression(random_state=1993, penalty='l2')
+clf = LogisticRegression(random_state=semilla, penalty='l2')
 
 #%% Pipeline - only tfidf (se aplica sobre X_texto)
 pipe_a = Pipeline([('vect', tfidf), ('clf', clf)])
 
 #%% Performance CV
-scores_a = cross_val_score(pipe_a, X_texto, y, cv=5, scoring='f1_micro')
-print("f-score=",round(scores_a.mean(),4),"(sd =",round(scores_a.std(),4),")")
+cv = StratifiedKFold(n_splits=5, random_state=semilla)
+metrics = {'acc':'accuracy','prec':'precision_macro','rec':'recall_macro','f1':'f1_macro'}
+scores_a = cross_validate(pipe_a, X_texto, y, cv=cv, scoring=metrics, return_train_score=False)
+# save mean and std to csv
+pd.DataFrame(scores_a).agg(["mean","std"]).round(4).T.to_csv('output/cv_scores_tfidf.csv')
 
 #%% Feature importance
 # fit on all data
@@ -45,26 +49,28 @@ mod = pipe_a.fit(X_texto, y)
 # get feature names
 features = mod.named_steps['vect'].get_feature_names()
 # get regression coefficientes
-weights = mod.named_steps['clf'].coef_[0]
-# me parece que esta al reves! (no se por que):
-important = {
-mod.named_steps['clf'].classes_[0]: pd.Series(weights,index=features).sort_values(ascending=False)[:10]
-,mod.named_steps['clf'].classes_[1]: pd.Series(weights,index=features).sort_values(ascending=False)[-10:]
-}
-# plots (revisar)
-# important['AE']
-important['AE'].plot(kind="bar",figsize=(15,5),color="darkgreen")
-plt.ylabel("Feature importance",size=20);plt.xticks(size = 20);plt.yticks(size = 20)
-# important['PE'].sort_values()
-important['PE'].plot(kind="bar",figsize=(15,5),color="darkgreen")
-plt.ylabel("Feature importance",size=20);plt.xticks(size = 20);plt.yticks(size = 20)
+weights = pd.Series(mod.named_steps['clf'].coef_[0], index=features)
 
-
-
+#%% export as csv para ggplot
+weights.to_csv("data/working/weights_tfidf.csv")
 
 
 # OTROS:
 #
+# # me parece que esta al reves! (no se por que):
+# important = {
+# mod.named_steps['clf'].classes_[0]: weights.sort_values(ascending=False)[:10]
+# ,mod.named_steps['clf'].classes_[1]: weights.sort_values(ascending=False)[-10:]
+# }
+#
+# # plots (revisar)
+# # important['AE']
+# important['AE'].plot(kind="bar",figsize=(15,5),color="darkgreen")
+# plt.ylabel("Feature importance",size=20);plt.xticks(size = 20);plt.yticks(size = 20)
+# # important['PE'].sort_values()
+# important['PE'].plot(kind="bar",figsize=(15,5),color="darkgreen")
+# plt.ylabel("Feature importance",size=20);plt.xticks(size = 20);plt.yticks(size = 20)
+
 # pipe_a_fitted = pipe_a.fit(X_texto, y)
 # preds = pipe_a_fitted.predict(X_texto)
 # probs = pipe_a_fitted.predict_proba(X_texto)
