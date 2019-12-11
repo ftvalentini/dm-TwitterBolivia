@@ -26,12 +26,10 @@ datf = dat.drop_duplicates('texto', keep='first').reset_index(drop=True)
 X = datf.drop(columns=['clase'])
 y = datf.clase
 
-X = X.head(1000)
-y = y.head(1000)
-
 #%% generacion de features de users
 # ACA GENERAR FEATURES DE USERS en X, GUARDAR NOMBRES EN UNA LISTA
-user_features = ['user_followers','user_friends']
+# QUE EMPIECEN CON "abt_" !!!!!!!!
+user_features = ['abt_user_followers','abt_user_friends']
 
 #%% pasos de los modelos
 semilla = 1993
