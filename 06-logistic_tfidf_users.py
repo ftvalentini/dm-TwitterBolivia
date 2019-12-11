@@ -4,9 +4,10 @@ import re, string
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, MaxAbsScaler
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline, FeatureUnion
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_validate, StratifiedKFold
 
 from helpers import clean_text, tokenize, get_stopwords
 
@@ -27,24 +28,30 @@ y = datf.clase
 
 #%% generacion de features de users
 # ACA GENERAR FEATURES DE USERS en X, GUARDAR NOMBRES EN UNA LISTA
-X['ln_user_followers'] = np.log(X['user_followers'] + 1)
-X['ln_user_friends'] = np.log(X['user_friends'] + 1)
-X['ln_user_listed'] = np.log(X['user_listed'] + 1)
-X['ln_user_statuses'] = np.log(X['user_statuses'] + 1)
+<<<<<<< HEAD
+X['abt_ln_user_followers'] = np.log(X['user_followers'] + 1)
+X['abt_ln_user_friends'] = np.log(X['user_friends'] + 1)
+X['abt_ln_user_listed'] = np.log(X['user_listed'] + 1)
+X['abt_ln_user_statuses'] = np.log(X['user_statuses'] + 1)
 X['tiempo_user'] = X['created'] - X['user_created']
 X['tiempo_user'] = X['tiempo_user'].astype('timedelta64[D]')
-X['ln_tiempo_user'] = np.log(X['tiempo_user'] + 1)
-X['words_tweet'] = X['texto_limpio'].str.split().apply(len)
+X['abt_ln_tiempo_user'] = np.log(X['tiempo_user'] + 1)
+X['abt_words_tweet'] = X['texto_limpio'].str.split().apply(len)
 
-user_features = ['ln_user_followers',
-                 'ln_user_friends',
-                 'ln_user_listed',
-                 'ln_user_statuses',
-                 'ln_tiempo_user',
-                 'user_verified',
-                 'words_tweet']
+user_features = ['abt_ln_user_followers',
+                 'abt_ln_user_friends',
+                 'abt_ln_user_listed',
+                 'abt_ln_user_statuses',
+                 'abt_ln_tiempo_user',
+                 'abt_user_verified',
+                 'abt_words_tweet']
+=======
+# QUE EMPIECEN CON "abt_" !!!!!!!!
+#user_features = ['abt_user_followers','abt_user_friends']
+>>>>>>> 543737c5c5b19ddda67318944db790730e4b1016
 
 #%% pasos de los modelos
+semilla = 1993
 # extraccion de features
 tfidf = TfidfVectorizer(preprocessor=clean_text, tokenizer=tokenize
                         , min_df=0.01, ngram_range=(1,4), stop_words=sw, binary=True)
@@ -58,8 +65,11 @@ class FeatSelector(BaseEstimator, TransformerMixin):
         return df[self.variables]
     def get_feature_names(self):
         return self.variables
+# scaling de features (minmax no funciona con sparse data)
+# scaler = StandardScaler(with_mean=False)
+scaler = MaxAbsScaler()
 # clasificador logistico (ridge)
-clf = LogisticRegression(random_state=1993, penalty='l2')
+clf = LogisticRegression(random_state=semilla, penalty='l2')
 
 #%% Pipeline - tfidf + user_features (se aplica sobre X)
 tfidf_features = Pipeline([('selector', FeatSelector(variables='texto'))
@@ -67,14 +77,24 @@ tfidf_features = Pipeline([('selector', FeatSelector(variables='texto'))
 pipe_b = Pipeline([
     ('features', FeatureUnion([
         ('tfidf', tfidf_features)
+<<<<<<< HEAD
         ,('others', FeatSelector(variables= user_features)) # aca va lista de user_features
     ])),
     ('clf', clf)
+=======
+        ,('others', FeatSelector(variables=user_features))
+    ]))
+    ,('scaler', scaler)
+    ,('clf', clf)
+>>>>>>> 543737c5c5b19ddda67318944db790730e4b1016
 ])
 
 #%% Performance CV
-scores_b = cross_val_score(pipe_b, X, y, cv=5, scoring='f1_micro')
-print("f-score=",round(scores_b.mean(),4),"(sd =",round(scores_b.std(),4),")")
+cv = StratifiedKFold(n_splits=5, random_state=semilla)
+metrics = {'acc':'accuracy','prec':'precision_macro','rec':'recall_macro','f1':'f1_macro'}
+scores_b = cross_validate(pipe_b, X, y, cv=cv, scoring=metrics, return_train_score=False)
+# save mean and std to csv
+pd.DataFrame(scores_b).agg(["mean","std"]).round(4).T.to_csv('output/cv_scores_tfidf_featusers.csv')
 
 #%% Feature importance
 # fit on all data
@@ -83,26 +103,25 @@ mod = pipe_b.fit(X, y)
 vars_tfidf = dict(mod.named_steps['features'].transformer_list).get('tfidf').named_steps['tfidf'].get_feature_names()
 vars_user = dict(mod.named_steps['features'].transformer_list).get('others').get_feature_names()
 features = vars_tfidf + vars_user
-# get regression coefficientes (OJO QUE ESTAN EN ESCALA DISTINTA Y NO HAY PVALUES)
-weights = mod.named_steps['clf'].coef_[0]
-# me parece que esta al reves! (no se por que):
-important = {
-mod.named_steps['clf'].classes_[0]: pd.Series(weights,index=features).sort_values(ascending=False)[:10]
-,mod.named_steps['clf'].classes_[1]: pd.Series(weights,index=features).sort_values(ascending=False)[-10:]
-}
-# plots (revisar)
-important['AE']
-important['AE'].plot(kind="bar",figsize=(15,5),color="darkgreen")
-plt.ylabel("Feature importance",size=20);plt.xticks(size = 20);plt.yticks(size = 20)
-important['PE'].sort_values()
-important['PE'].plot(kind="bar",figsize=(15,5),color="darkgreen")
-plt.ylabel("Feature importance",size=20);plt.xticks(size = 20);plt.yticks(size = 20)
+# get regression coefficientes (NO HAY PVALUES!!!)
+weights = pd.Series(mod.named_steps['clf'].coef_[0], index=features)
 
-
+#%% export as csv para ggplot
+weights.to_csv("data/working/weights_tfidf_featusers.csv")
 
 
 
 # OTROS:
+# ## importance segun magnitud
+# # me parece que esta al reves! (no se por que):
+# important = weights.reindex(weights.abs().sort_values(ascending=False).index)[:20]
+# # plots (revisar)
+# important['AE']
+# important['AE'].plot(kind="bar",figsize=(15,5),color="darkgreen")
+# plt.ylabel("Feature importance",size=20);plt.xticks(size = 20);plt.yticks(size = 20)
+# important['PE'].sort_values()
+# important['PE'].plot(kind="bar",figsize=(15,5),color="darkgreen")
+# plt.ylabel("Feature importance",size=20);plt.xticks(size = 20);plt.yticks(size = 20)
 #
 # pipe_a_fitted = pipe_a.fit(X_texto, y)
 # preds = pipe_a_fitted.predict(X_texto)
