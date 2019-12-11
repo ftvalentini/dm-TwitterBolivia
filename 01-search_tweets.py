@@ -17,11 +17,11 @@ fName = 'data/raw/tweets_bolivia_evo.txt'
 # fName = 'data/raw/tweets_bolivia_tokens.txt'
 # fName = 'data/raw/tweets_bolivia.txt'
 
-# credenciales FV:
-consumer_key = "XcEdDI9jJnQP58eALgWjMeVr6"
-consumer_secret = "lPamYjWmAijbIr2TOtg1lXuZFAH5oSPsurUNLiePLruti26DCa"
-access_token = "2241662364-TfTTC57mrrA8yEDTQFDVaHacqNXGtVc3P92AH4b"
-access_token_secret = "8kuVOhsWS6Ush1HXjmNHr6HSFjMxThphefbi3iBEzmbM0"
+# credenciales FV (ver txt resources):
+consumer_key = "XXX"
+consumer_secret = "XXX"
+access_token = "XXX"
+access_token_secret = "XXX"
 
 auth = tw.AppAuthHandler(consumer_key, consumer_secret) # usando esta autentificacion baja a mayor rate...
 api = tw.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)

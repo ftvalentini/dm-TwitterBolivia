@@ -29,6 +29,7 @@ y = datf.clase
 #%% generacion de features de users
 # ACA GENERAR FEATURES DE USERS en X, GUARDAR NOMBRES EN UNA LISTA
 <<<<<<< HEAD
+<<<<<<< HEAD
 X['abt_ln_user_followers'] = np.log(X['user_followers'] + 1)
 X['abt_ln_user_friends'] = np.log(X['user_friends'] + 1)
 X['abt_ln_user_listed'] = np.log(X['user_listed'] + 1)
@@ -45,10 +46,10 @@ user_features = ['abt_ln_user_followers',
                  'abt_ln_tiempo_user',
                  'abt_user_verified',
                  'abt_words_tweet']
-=======
+
 # QUE EMPIECEN CON "abt_" !!!!!!!!
 #user_features = ['abt_user_followers','abt_user_friends']
->>>>>>> 543737c5c5b19ddda67318944db790730e4b1016
+
 
 #%% pasos de los modelos
 semilla = 1993
@@ -77,16 +78,10 @@ tfidf_features = Pipeline([('selector', FeatSelector(variables='texto'))
 pipe_b = Pipeline([
     ('features', FeatureUnion([
         ('tfidf', tfidf_features)
-<<<<<<< HEAD
-        ,('others', FeatSelector(variables= user_features)) # aca va lista de user_features
-    ])),
-    ('clf', clf)
-=======
         ,('others', FeatSelector(variables=user_features))
     ]))
     ,('scaler', scaler)
     ,('clf', clf)
->>>>>>> 543737c5c5b19ddda67318944db790730e4b1016
 ])
 
 #%% Performance CV
