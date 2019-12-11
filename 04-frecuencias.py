@@ -46,23 +46,26 @@ df['frel_pe'] = (df.fabs_pe / len(texto_pe))
 df['score_ae'] = np.log(df.frel_ae / df.fabs)
 df['score_pe'] = np.log(df.frel_pe / df.fabs)
 df['dif_score'] = np.abs(df.score_ae - df.score_pe)
-# get top 15 diferencias para cada clase (solo de terminos con freq mayor a X)
+df = df.sort_values('dif_score',ascending=False)
+# save csv
+df.to_csv('data/working/terminos_scores.csv', index=False)
+
+#%% frecuencias relativas por hora de los tokens detectados
+# get top diferencias para cada clase (solo de terminos con freq mayor a X)
     # use X=0 (o sea dado por min_frec) y X=5000
-min_fabs = 0
-temp = df.loc[df.fabs>=min_fabs].sort_values('dif_score',ascending=False)
+min_fabs = 5000
+temp = df.loc[df.fabs>=min_fabs]
 tokens_ae = temp.loc[temp.score_ae > temp.score_pe].head(10).termino.tolist()
 tokens_pe = temp.loc[temp.score_pe > temp.score_ae].head(10).termino.tolist()
 tokens = tokens_ae + tokens_pe
-
-#%% frecuencias relativas por hora de los tokens detectados
 # agrega tokens al dataframe
 i_terminos = [tokens.index(ter) if ter in tokens else None for ter in terminos]
 temp2 = pd.DataFrame(mat.tocsr()[:,[i for i in i_terminos if i is not None]].toarray()
                     , columns=tokens)
 tot = pd.concat([datf[['created','clase']], temp2], axis=1)
 # tokens por intervalos de X horas y por clase
-sums_time = tot.groupby([pd.Grouper(key="created", freq='24h', base=0, label='left'),'clase']).sum()
-tot_time = tot.groupby([pd.Grouper(key="created", freq='24h', base=0, label='left'),'clase']).count()
+sums_time = tot.groupby([pd.Grouper(key="created", freq='12h', base=0, label='left'),'clase']).sum()
+tot_time = tot.groupby([pd.Grouper(key="created", freq='12h', base=0, label='left'),'clase']).count()
 # frecuencias relativas
 rel_sums_time = sums_time / tot_time * 100
 
