@@ -2,6 +2,7 @@ import re, string
 from unidecode import unidecode
 from nltk.tokenize.casual import TweetTokenizer
 from nltk.corpus import stopwords
+from sklearn.base import BaseEstimator, TransformerMixin
 
 # clean a hashtag
 def clean_ht(ht):
@@ -64,3 +65,14 @@ def get_stopwords():
     sw = list(set(sw1 + sw2))
     sw.extend(["x","xq","vs","ahi","hoy","q","u"])
     return sw
+
+# selector de features en pipeline
+class FeatSelector(BaseEstimator, TransformerMixin):
+    def __init__(self, variables):
+        self.variables = variables
+    def fit(self, df, y=None):
+        return self
+    def transform(self, df):
+        return df[self.variables]
+    def get_feature_names(self):
+        return self.variables
