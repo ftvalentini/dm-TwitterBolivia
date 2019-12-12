@@ -1,3 +1,4 @@
+import pickle
 import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
@@ -34,8 +35,15 @@ count_vect = CountVectorizer(preprocessor=clean_text, tokenizer=tokenize
 mat = count_vect.fit_transform(texto_full)
 mat_ae = count_vect.transform(texto_ae)
 mat_pe = count_vect.transform(texto_pe)
+# save vectorized sparse data
+pickle.dump(mat, open("data/working/sparse_counts_all.p", "wb"))
+pickle.dump(mat_ae, open("data/working/sparse_counts_ae.p", "wb"))
+pickle.dump(mat_pe, open("data/working/sparse_counts_pe.p", "wb"))
 
 #%% scores de importancia de terminos en cada clase
+# mat = pickle.load(open("data/working/sparse_counts_all.p", "rb"))
+# mat_ae = pickle.load(open("data/working/sparse_counts_ae.p", "rb"))
+# mat_pe = pickle.load(open("data/working/sparse_counts_pe.p", "rb"))
 terminos = np.array(count_vect.get_feature_names())
 freqs = np.asarray(mat.sum(axis=0)).ravel()
 freqs_ae = np.asarray(mat_ae.sum(axis=0)).ravel()

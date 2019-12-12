@@ -8,6 +8,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler, MaxAbsScaler
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.model_selection import cross_validate, StratifiedKFold
+from sklearn.externals import joblib
 
 from helpers import clean_text, tokenize, get_stopwords
 
@@ -27,29 +28,25 @@ X = datf.drop(columns=['clase'])
 y = datf.clase
 
 #%% generacion de features de users
-# ACA GENERAR FEATURES DE USERS en X, GUARDAR NOMBRES EN UNA LISTA
-<<<<<<< HEAD
-<<<<<<< HEAD
 X['abt_ln_user_followers'] = np.log(X['user_followers'] + 1)
 X['abt_ln_user_friends'] = np.log(X['user_friends'] + 1)
 X['abt_ln_user_listed'] = np.log(X['user_listed'] + 1)
 X['abt_ln_user_statuses'] = np.log(X['user_statuses'] + 1)
 X['tiempo_user'] = X['created'] - X['user_created']
-X['tiempo_user'] = X['tiempo_user'].astype('timedelta64[D]')
+X['tiempo_user'] = X['tiempo_user'].astype('timedelta64[D]').astype('int')
 X['abt_ln_tiempo_user'] = np.log(X['tiempo_user'] + 1)
 X['abt_words_tweet'] = X['texto_limpio'].str.split().apply(len)
+X['abt_user_verified'] = X['user_verified']
 
-user_features = ['abt_ln_user_followers',
-                 'abt_ln_user_friends',
-                 'abt_ln_user_listed',
-                 'abt_ln_user_statuses',
-                 'abt_ln_tiempo_user',
-                 'abt_user_verified',
-                 'abt_words_tweet']
-
-# QUE EMPIECEN CON "abt_" !!!!!!!!
-#user_features = ['abt_user_followers','abt_user_friends']
-
+user_features = [
+                 'abt_ln_user_followers'
+                 ,'abt_ln_user_friends'
+                 ,'abt_ln_user_listed'
+                 ,'abt_ln_user_statuses'
+                 ,'abt_ln_tiempo_user'
+                 # ,'abt_user_verified'
+                 # ,'abt_words_tweet'
+                 ]
 
 #%% pasos de los modelos
 semilla = 1993
@@ -91,9 +88,12 @@ scores_b = cross_validate(pipe_b, X, y, cv=cv, scoring=metrics, return_train_sco
 # save mean and std to csv
 pd.DataFrame(scores_b).agg(["mean","std"]).round(4).T.to_csv('output/cv_scores_tfidf_featusers.csv')
 
-#%% Feature importance
-# fit on all data
+#%% Fit on all data and save
 mod = pipe_b.fit(X, y)
+joblib.dump(mod, 'data/working/mod_tfidf_featusers.joblib')
+
+#%% Feature importance
+# mod = joblib.load('data/working/tfidf_featusers.joblib')
 # get feature names
 vars_tfidf = dict(mod.named_steps['features'].transformer_list).get('tfidf').named_steps['tfidf'].get_feature_names()
 vars_user = dict(mod.named_steps['features'].transformer_list).get('others').get_feature_names()

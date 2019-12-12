@@ -8,6 +8,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.model_selection import cross_validate, StratifiedKFold
+from sklearn.externals import joblib
 
 from helpers import clean_text, tokenize, get_stopwords
 
@@ -43,9 +44,12 @@ scores_a = cross_validate(pipe_a, X_texto, y, cv=cv, scoring=metrics, return_tra
 # save mean and std to csv
 pd.DataFrame(scores_a).agg(["mean","std"]).round(4).T.to_csv('output/cv_scores_tfidf.csv')
 
-#%% Feature importance
-# fit on all data
+#%% Fit on all data and save
 mod = pipe_a.fit(X_texto, y)
+joblib.dump(mod, 'data/working/mod_tfidf.joblib')
+
+#%% Feature importance
+# mod = joblib.load('data/working/mod_tfidf.joblib')
 # get feature names
 features = mod.named_steps['vect'].get_feature_names()
 # get regression coefficientes
