@@ -39,11 +39,13 @@ mat_pe = count_vect.transform(texto_pe)
 pickle.dump(mat, open("data/working/sparse_counts_all.p", "wb"))
 pickle.dump(mat_ae, open("data/working/sparse_counts_ae.p", "wb"))
 pickle.dump(mat_pe, open("data/working/sparse_counts_pe.p", "wb"))
+pickle.dump(count_vect.get_feature_names(), open("data/working/terminos.p", "wb"))
 
 #%% scores de importancia de terminos en cada clase
 # mat = pickle.load(open("data/working/sparse_counts_all.p", "rb"))
 # mat_ae = pickle.load(open("data/working/sparse_counts_ae.p", "rb"))
 # mat_pe = pickle.load(open("data/working/sparse_counts_pe.p", "rb"))
+# terminos = pickle.load(open("data/working/terminos.p", "rb"))
 terminos = np.array(count_vect.get_feature_names())
 freqs = np.asarray(mat.sum(axis=0)).ravel()
 freqs_ae = np.asarray(mat_ae.sum(axis=0)).ravel()
@@ -60,14 +62,14 @@ df.to_csv('data/working/terminos_scores.csv', index=False)
 
 #%% frecuencias relativas por hora de los tokens detectados
 # get top diferencias para cada clase (solo de terminos con freq mayor a X)
-    # use X=0 (o sea dado por min_frec) y X=5000
+    # use X=0 (o sea dado por min_frec) y X=5000 y X=3000
 min_fabs = 5000
 temp = df.loc[df.fabs>=min_fabs]
 tokens_ae = temp.loc[temp.score_ae > temp.score_pe].head(10).termino.tolist()
 tokens_pe = temp.loc[temp.score_pe > temp.score_ae].head(10).termino.tolist()
 tokens = tokens_ae + tokens_pe
 # agrega tokens al dataframe
-i_terminos = [tokens.index(ter) if ter in tokens else None for ter in terminos]
+i_terminos = [np.where(terminos == tokens[i])[0][0] for i in range(len(tokens))]
 temp2 = pd.DataFrame(mat.tocsr()[:,[i for i in i_terminos if i is not None]].toarray()
                     , columns=tokens)
 tot = pd.concat([datf[['created','clase']], temp2], axis=1)
@@ -83,6 +85,12 @@ rel_sums_time.to_csv("data/working/time_tokens_rel_"+str(min_fabs)+".csv")
 tot_time.to_csv("data/working/time_tokens_all_"+str(min_fabs)+".csv")
 
 
+
+# aa = datf.loc[datf.texto_limpio.str.contains(r"(?=.*saqueando)(?=.*vandalicos)", regex=True)]
+# aa.shape
+# [(j,i) for i, j in zip(aa.texto, aa.clase)]
+#
+# aa.head(5).id.tolist()[0]
 
 # PARA REVISAR TUITS:
 # ts = ['dictador']
